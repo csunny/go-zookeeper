@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
@@ -1257,4 +1258,29 @@ func (c *Conn) Server() string {
 	c.serverMu.Lock()
 	defer c.serverMu.Unlock()
 	return c.server
+}
+
+// Command exec the zk four field command
+// Send a management command to the current ZK server
+func (c *Conn) Command(cmd []byte) ([]byte, error) {
+	//
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", c.server)
+
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	defer conn.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = conn.Write(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := ioutil.ReadAll(conn)
+	return result, nil
 }
